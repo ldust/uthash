@@ -42,6 +42,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define oom() exit(-1)
 #endif
 
+#ifndef uthash_malloc
+#define uthash_malloc(sz) malloc(sz)      /* malloc fcn                      */
+#endif
+#ifndef uthash_realloc
+#define uthash_realloc(ptr, sz) realloc(ptr, sz)      /* realloc fcn                      */
+#endif
+#ifndef uthash_free
+#define uthash_free(ptr) free(ptr)     /* free fcn                        */
+#endif
+
 typedef void (ctor_f)(void *dst, const void *src);
 typedef void (dtor_f)(void *elt);
 typedef void (init_f)(void *elt);
@@ -71,27 +81,27 @@ typedef struct {
         (a)->icd.dtor(utarray_eltptr(a,_ut_i));                               \
       }                                                                       \
     }                                                                         \
-    free((a)->d);                                                             \
+    uthash_free((a)->d);                                                      \
   }                                                                           \
   (a)->n=0;                                                                   \
 } while(0)
 
 #define utarray_new(a,_icd) do {                                              \
-  (a) = (UT_array*)malloc(sizeof(UT_array));                                  \
+  (a) = (UT_array*)uthash_malloc(sizeof(UT_array));                           \
   if ((a) == NULL) oom();                                                     \
   utarray_init(a,_icd);                                                       \
 } while(0)
 
 #define utarray_free(a) do {                                                  \
   utarray_done(a);                                                            \
-  free(a);                                                                    \
+  uthash_free(a);                                                             \
 } while(0)
 
 #define utarray_reserve(a,by) do {                                            \
   if (((a)->i+(by)) > (a)->n) {                                               \
     char *utarray_tmp;                                                        \
     while (((a)->i+(by)) > (a)->n) { (a)->n = ((a)->n ? (2*(a)->n) : 8); }    \
-    utarray_tmp=(char*)realloc((a)->d, (a)->n*(a)->icd.sz);                   \
+    utarray_tmp=(char*)uthash_realloc((a)->d, (a)->n*(a)->icd.sz);            \
     if (utarray_tmp == NULL) oom();                                           \
     (a)->d=utarray_tmp;                                                       \
   }                                                                           \
@@ -228,7 +238,7 @@ static void utarray_str_cpy(void *dst, const void *src) {
 }
 static void utarray_str_dtor(void *elt) {
   char **eltc = (char**)elt;
-  if (*eltc != NULL) free(*eltc);
+  if (*eltc != NULL) uthash_free(*eltc);
 }
 static const UT_icd ut_str_icd UTARRAY_UNUSED = {sizeof(char*),NULL,utarray_str_cpy,utarray_str_dtor};
 static const UT_icd ut_int_icd UTARRAY_UNUSED = {sizeof(int),NULL,NULL,NULL};

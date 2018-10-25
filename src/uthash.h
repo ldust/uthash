@@ -83,7 +83,7 @@ typedef unsigned char uint8_t;
 #define uthash_malloc(sz) malloc(sz)      /* malloc fcn                      */
 #endif
 #ifndef uthash_free
-#define uthash_free(ptr,sz) free(ptr)     /* free fcn                        */
+#define uthash_free(ptr) free(ptr)     /* free fcn                        */
 #endif
 #ifndef uthash_bzero
 #define uthash_bzero(a,n) memset(a,'\0',n)
@@ -189,7 +189,7 @@ do {                                                                            
 
 #define HASH_BLOOM_FREE(tbl)                                                     \
 do {                                                                             \
-  uthash_free((tbl)->bloom_bv, HASH_BLOOM_BYTELEN);                              \
+  uthash_free((tbl)->bloom_bv);                                                  \
 } while (0)
 
 #define HASH_BLOOM_BITSET(bv,idx) (bv[(idx)/8U] |= (1U << ((idx)%8U)))
@@ -225,16 +225,15 @@ do {                                                                            
     (head)->hh.tbl->signature = HASH_SIGNATURE;                                  \
     if (!(head)->hh.tbl->buckets) {                                              \
       HASH_RECORD_OOM(oomed);                                                    \
-      uthash_free((head)->hh.tbl, sizeof(UT_hash_table));                        \
+      uthash_free((head)->hh.tbl);                                               \
     } else {                                                                     \
       uthash_bzero((head)->hh.tbl->buckets,                                      \
           HASH_INITIAL_NUM_BUCKETS * sizeof(struct UT_hash_bucket));             \
       HASH_BLOOM_MAKE((head)->hh.tbl, oomed);                                    \
       IF_HASH_NONFATAL_OOM(                                                      \
         if (oomed) {                                                             \
-          uthash_free((head)->hh.tbl->buckets,                                   \
-              HASH_INITIAL_NUM_BUCKETS*sizeof(struct UT_hash_bucket));           \
-          uthash_free((head)->hh.tbl, sizeof(UT_hash_table));                    \
+          uthash_free((head)->hh.tbl->buckets);                                  \
+          uthash_free((head)->hh.tbl);                                           \
         }                                                                        \
       )                                                                          \
     }                                                                            \
@@ -452,9 +451,8 @@ do {                                                                            
   struct UT_hash_handle *_hd_hh_del = (delptrhh);                                \
   if ((_hd_hh_del->prev == NULL) && (_hd_hh_del->next == NULL)) {                \
     HASH_BLOOM_FREE((head)->hh.tbl);                                             \
-    uthash_free((head)->hh.tbl->buckets,                                         \
-                (head)->hh.tbl->num_buckets * sizeof(struct UT_hash_bucket));    \
-    uthash_free((head)->hh.tbl, sizeof(UT_hash_table));                          \
+    uthash_free((head)->hh.tbl->buckets);                                        \
+    uthash_free((head)->hh.tbl);                                                 \
     (head) = NULL;                                                               \
   } else {                                                                       \
     unsigned _hd_bkt;                                                            \
@@ -948,7 +946,7 @@ do {                                                                            
         _he_thh = _he_hh_nxt;                                                    \
       }                                                                          \
     }                                                                            \
-    uthash_free((tbl)->buckets, (tbl)->num_buckets * sizeof(struct UT_hash_bucket)); \
+    uthash_free((tbl)->buckets);                                                 \
     (tbl)->num_buckets *= 2U;                                                    \
     (tbl)->log2_num_buckets++;                                                   \
     (tbl)->buckets = _he_new_buckets;                                            \
@@ -1118,9 +1116,8 @@ do {                                                                            
 do {                                                                             \
   if ((head) != NULL) {                                                          \
     HASH_BLOOM_FREE((head)->hh.tbl);                                             \
-    uthash_free((head)->hh.tbl->buckets,                                         \
-                (head)->hh.tbl->num_buckets*sizeof(struct UT_hash_bucket));      \
-    uthash_free((head)->hh.tbl, sizeof(UT_hash_table));                          \
+    uthash_free((head)->hh.tbl->buckets);                                        \
+    uthash_free((head)->hh.tbl);                                                 \
     (head) = NULL;                                                               \
   }                                                                              \
 } while (0)
